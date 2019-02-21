@@ -1,0 +1,25 @@
+{
+  "description": "Testing cookies for different resources",
+  "manifest_version": 2,
+  "name": "cookie-taster",
+  "version": "1.0",
+  "homepage_url": "https://github.com/teamnsrg/cookie-taster",
+  "permissions": [
+    "webRequest", "webRequestBlocking", "<all_urls>"
+  ],
+
+  "background": {
+    "scripts": ["libs/uri.min.js","libs/sha256.js","background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "applications": {
+    "gecko": {
+      "strict_min_version": "57.0a1"
+    }
+  }
+}
