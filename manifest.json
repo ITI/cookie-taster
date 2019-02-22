@@ -9,7 +9,7 @@
   ],
 
   "background": {
-    "scripts": ["libs/uri.min.js","libs/sha256.js","background.js"]
+    "scripts": ["libs/sha256.js","background.js"]
   },
   "content_scripts": [
     {
