@@ -1,4 +1,5 @@
 var resource_urls = {}, ignore_urls = [];
+const STOP_HEADER = "###";
 
 function onStartedDownload(id) {
     console.log(`Started downloading: ${id}`);
@@ -104,7 +105,9 @@ function listener(details) {
       input = event.data;
     }
 
-    if (resource_urls[details.url][details.requestId]['data'] == null) {
+    first_packet = resource_urls[details.url][details.requestId]['data'] == null;   
+
+    if (first_packet) {
       resource_urls[details.url][details.requestId]['data'] = input;
     } else {
       let dtype = resource_urls[details.url][details.requestId]['type'];
@@ -116,7 +119,13 @@ function listener(details) {
     }
 
     if (details.type == 'script' || details.type == 'stylesheet') {
-      output = encoder.encode(input);
+      // prepend nonsense JS to prevent execution for secondary load
+      if (details.type == 'script' && first_packet && Object.keys(resource_urls[details.url]).length == 2) {
+        console.log(STOP_HEADER + input);
+        output = encoder.encode(STOP_HEADER + input);
+      } else {
+        output = encoder.encode(input);
+      }
     } else {
       output = event.data;
     }    
