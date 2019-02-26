@@ -3,11 +3,10 @@
   "manifest_version": 2,
   "name": "cookie-taster",
   "version": "1.0",
-  "homepage_url": "https://github.com/teamnsrg/cookie-taster",
+  "homepage_url": "https://github.com/teamnsrg/cookie-taster/tree/master/extension",
   "permissions": [
     "downloads", "webRequest", "webRequestBlocking", "<all_urls>"
   ],
-
   "background": {
     "scripts": ["background.js"]
   },

@@ -138,7 +138,7 @@ function listener(details) {
 }
 
 function new_frame(details) {
-  cookie_resources = {}
+  resource_urls = {}
 }
 
 
