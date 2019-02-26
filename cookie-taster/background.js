@@ -1,4 +1,4 @@
-var resource_urls = {};
+var resource_urls = {}, ignore_urls = [];
 
 function onStartedDownload(id) {
     console.log(`Started downloading: ${id}`);
@@ -27,31 +27,45 @@ function download(data, fname) {
     downloading.then(onStartedDownload, onFailed);
 }
 
+function containsHeader(headers, name) {
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i].name.toLowerCase() == name.toLowerCase()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function removeHeader(headers, name) {
   for (var i = 0; i < headers.length; i++) {
-    if (headers[i].name.toLowerCase() == name) {
+    if (headers[i].name.toLowerCase() == name.toLowerCase()) {
       headers.splice(i, 1);
       break;
     }
   }
 }
 
-function equal (buf1, buf2)
-{
-    if (buf1.byteLength != buf2.byteLength) return false;
-    var dv1 = new Int8Array(buf1);
-    var dv2 = new Int8Array(buf2);
-    for (var i = 0 ; i != buf1.byteLength ; i++)
-    {
-        if (dv1[i] != dv2[i]) return false;
-    }
-    return true;
+function equal (buf1, buf2) {
+  if (buf1.byteLength != buf2.byteLength) return false;
+  var dv1 = new Int8Array(buf1);
+  var dv2 = new Int8Array(buf2);
+  for (var i = 0 ; i != buf1.byteLength ; i++)
+  {
+      if (dv1[i] != dv2[i]) return false;
+  }
+  return true;
 }
 
 browser.webRequest.onBeforeSendHeaders.addListener(
   function(details) {
+    let previouslySeen = ((details.url in resource_urls) && Object.keys(resource_urls[details.url]).length >= 2);
 
-    if (details.url in resource_urls && Object.keys(resource_urls[details.url]).length == 1) {
+    //TODO: check to see if initial request has headers, ignore if no
+    if (!previouslySeen && !containsHeader(details.requestHeaders, 'cookie')) {
+      ignore_urls.push(details.url);
+    }
+
+    if (previouslySeen) {
       console.log('Removing cookies for ' + details.type + ': ' + details.url);
       removeHeader(details.requestHeaders, 'cookie');
     }
@@ -75,7 +89,7 @@ function listener(details) {
       'type': details.type,
       'data': null
     };
-  } else if (!details.requestId in resource_urls[details.url]) {
+  } else if (!(details.requestId in resource_urls[details.url])) {
     resource_urls[details.url][details.requestId] = {
       'cookie': false,
       'type': details.type,
@@ -112,11 +126,12 @@ function listener(details) {
 
   filter.onstop = event => {
     let keys = Object.keys(resource_urls[details.url])
-    if (keys.length == 2) {
+
+    if (!resource_urls[details.url][details.requestId]['cookie']) {
       data1 = resource_urls[details.url][keys[0]]['data'];
       data2 = resource_urls[details.url][keys[1]]['data'];
-      cookieStr1 = resource_urls[details.url][keys[0]]['cookie'] ? 'cookie', 'no_cookie';
-      cookieStr2 = resource_urls[details.url][keys[1]]['cookie'] ? 'cookie', 'no_cookie';
+      cookieStr1 = resource_urls[details.url][keys[0]]['cookie'] ? 'cookie' : 'no_cookie';
+      cookieStr2 = resource_urls[details.url][keys[1]]['cookie'] ? 'cookie' : 'no_cookie';
       if (details.type == 'script' || details.type == 'stylesheet') {
         if(data1 != data2) {
           download(data1, [details.url, details.type, cookieStr1].join('.'));
@@ -129,7 +144,9 @@ function listener(details) {
         }
       }
     } else {
-      browser.tabs.sendMessage(details.tabId, {'url': details.url, 'type': details.type, 'timeout': 500});
+      if (!ignore_urls.includes(details.url)) {
+        browser.tabs.sendMessage(details.tabId, {'url': details.url, 'type': details.type, 'timeout': 500});
+      }
     }
     filter.disconnect();
   }
@@ -138,14 +155,14 @@ function listener(details) {
 }
 
 function new_frame(details) {
-  resource_urls = {}
+  resource_urls = {};
+  ignore_urls = [];
 }
 
 
 browser.webRequest.onBeforeRequest.addListener(
   listener,
-  {urls: ["<all_urls>"], types: ["script","stylesheet"]},
-  // {urls: ["<all_urls>"], types: ["script","stylesheet","media","object","image"]},
+  {urls: ["<all_urls>"], types: ["script","stylesheet","media","object","image"]},
   ['blocking']
 );
 

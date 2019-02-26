@@ -3,19 +3,23 @@
   "manifest_version": 2,
   "name": "cookie-taster",
   "version": "1.0",
-  "homepage_url": "https://github.com/teamnsrg/cookie-taster/tree/master/extension",
+  "homepage_url": "https://github.com/teamnsrg/cookie-taster/tree/master/cookie-taster",
+
   "permissions": [
     "downloads", "webRequest", "webRequestBlocking", "<all_urls>"
   ],
+
   "background": {
     "scripts": ["background.js"]
   },
+
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"]
     }
   ],
+
   "applications": {
     "gecko": {
       "strict_min_version": "57.0a1"
