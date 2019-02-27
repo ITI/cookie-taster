@@ -1,4 +1,5 @@
 var resource_urls = {}, ignore_urls = [];
+var main_url;
 const STOP_HEADER = "###";
 
 function onStartedDownload(id) {
@@ -151,15 +152,15 @@ function listener(details) {
       cookieStr2 = resource_urls[details.url][keys[1]]['cookie'] ? 'cookie' : 'no_cookie';
       if (details.type == 'script' || details.type == 'stylesheet') {
         if(data1 != data2) {
-          download(data1, [details.url, details.type, cookieStr1].join('.'));
-          download(data2, [details.url, details.type, cookieStr2].join('.'));
+          download(data1, [main_url, details.url, details.type, cookieStr1].join('.'));
+          download(data2, [main_url, details.url, details.type, cookieStr2].join('.'));
         } else {
           console.log("Cookie does not change content: " + details.url)
         }
       } else {
         if (!equal(data1, data2)) {
-          download(data1, [details.url, details.type, cookieStr1].join('.'));
-          download(data2, [details.url, details.type, cookieStr2].join('.'));
+          download(data1, [main_url, details.url, details.type, cookieStr1].join('.'));
+          download(data2, [main_url, details.url, details.type, cookieStr2].join('.'));
         } else {
           console.log("Cookie does not change content: " + details.url)
         }
@@ -180,6 +181,7 @@ function new_frame(details) {
   console.log("Resetting resource urls");
   resource_urls = {};
   ignore_urls = [];
+  main_url = details.url;
 }
 
 
