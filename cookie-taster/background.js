@@ -46,7 +46,7 @@ function removeHeader(headers, name) {
   }
 }
 
-function equal (buf1, buf2) {
+function equal(buf1, buf2) {
   if (buf1.byteLength != buf2.byteLength) return false;
   var dv1 = new Int8Array(buf1);
   var dv2 = new Int8Array(buf2);
@@ -57,14 +57,23 @@ function equal (buf1, buf2) {
   return true;
 }
 
+function appendBuffer( buffer1, buffer2 ) {
+  var tmp = new Uint8Array( buffer1.byteLength + buffer2.byteLength );
+  tmp.set( new Uint8Array( buffer1 ), 0 );
+  tmp.set( new Uint8Array( buffer2 ), buffer1.byteLength );
+  return tmp.buffer;
+}
+
 browser.webRequest.onBeforeSendHeaders.addListener(
   function(details) {
     let previouslySeen = ((details.url in resource_urls) && Object.keys(resource_urls[details.url]).length >= 2);
 
-    //TODO: check to see if initial request has headers, ignore if no
+    //check to see if initial request has headers, ignore if no
     if (!previouslySeen && !containsHeader(details.requestHeaders, 'cookie')) {
       ignore_urls.push(details.url);
-    }
+    } else if (!previouslySeen) {
+      console.log('First time w/ cookie! ' + details.url);
+    } 
 
     if (previouslySeen) {
       console.log('Removing cookies for ' + details.type + ': ' + details.url);
@@ -114,14 +123,13 @@ function listener(details) {
       if ((dtype == 'script') || (dtype == 'stylesheet')) {
         resource_urls[details.url][details.requestId]['data'] += input;
       } else {
-        //TODO: append array buffer 
+        resource_urls[details.url][details.requestId]['data'] = appendBuffer(resource_urls[details.url][details.requestId]['data'], input);
       }
     }
 
     if (details.type == 'script' || details.type == 'stylesheet') {
       // prepend nonsense JS to prevent execution for secondary load
       if (details.type == 'script' && first_packet && Object.keys(resource_urls[details.url]).length == 2) {
-        console.log(STOP_HEADER + input);
         output = encoder.encode(STOP_HEADER + input);
       } else {
         output = encoder.encode(input);
@@ -145,16 +153,21 @@ function listener(details) {
         if(data1 != data2) {
           download(data1, [details.url, details.type, cookieStr1].join('.'));
           download(data2, [details.url, details.type, cookieStr2].join('.'));
+        } else {
+          console.log("Cookie does not change content: " + details.url)
         }
       } else {
         if (!equal(data1, data2)) {
           download(data1, [details.url, details.type, cookieStr1].join('.'));
           download(data2, [details.url, details.type, cookieStr2].join('.'));
+        } else {
+          console.log("Cookie does not change content: " + details.url)
         }
       }
     } else {
       if (!ignore_urls.includes(details.url)) {
-        browser.tabs.sendMessage(details.tabId, {'url': details.url, 'type': details.type, 'timeout': 500});
+        console.log("re-fetching " + details.url);
+        browser.tabs.sendMessage(details.tabId, {'url': details.url, 'type': details.type, 'timeout': 100});
       }
     }
     filter.disconnect();
@@ -164,6 +177,7 @@ function listener(details) {
 }
 
 function new_frame(details) {
+  console.log("Resetting resource urls");
   resource_urls = {};
   ignore_urls = [];
 }
