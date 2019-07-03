@@ -34,7 +34,19 @@ function injectScript(request, sender, sendResponse) {
       obj.data = request['url'];
       obj.style = "display:none;";
       document.body.appendChild(obj);
-    }  
+    } else if (request['type'] == 'xmlhttprequest') {
+      var req = new XMLHttpRequest();
+      req.open(request['info']['method'], request['url'], true);
+      var headers = request['info']['headers'];
+      for (var header in headers) {
+        req.setRequestHeader(headers[header]['name'], headers[header]['value']);
+      }
+      
+      req.onload = function () {
+            alert("again:" + this.responseText);
+      };
+      req.send();
+    } 
   });
   
 }

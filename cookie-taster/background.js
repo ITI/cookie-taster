@@ -1,4 +1,5 @@
 var resource_urls = {}, ignore_urls = [];
+var request_headers = {}
 var main_url;
 const STOP_HEADER = "###";
 
@@ -24,13 +25,11 @@ function download(data, fname) {
           conflictAction : 'uniquify',
     });
 
-    //console.log(sanitizeFilename(fname));
-
     downloading.then(onStartedDownload, onFailed);
 }
 
 function containsHeader(headers, name) {
-  for (var i = 0; i < headers.length; i++) {
+  for (let i = 0; i < headers.length; i++) {
     if (headers[i].name.toLowerCase() == name.toLowerCase()) {
       return true;
     }
@@ -39,7 +38,7 @@ function containsHeader(headers, name) {
 }
 
 function removeHeader(headers, name) {
-  for (var i = 0; i < headers.length; i++) {
+  for (let i = 0; i < headers.length; i++) {
     if (headers[i].name.toLowerCase() == name.toLowerCase()) {
       headers.splice(i, 1);
       break;
@@ -51,7 +50,7 @@ function equal(buf1, buf2) {
   if (buf1.byteLength != buf2.byteLength) return false;
   var dv1 = new Int8Array(buf1);
   var dv2 = new Int8Array(buf2);
-  for (var i = 0 ; i != buf1.byteLength ; i++)
+  for (let i = 0 ; i != buf1.byteLength ; i++)
   {
       if (dv1[i] != dv2[i]) return false;
   }
@@ -74,6 +73,10 @@ browser.webRequest.onBeforeSendHeaders.addListener(
       ignore_urls.push(details.url);
     } else if (!previouslySeen) {
       console.log('First time w/ cookie! ' + details.url);
+      if (!request_headers[details.url]) {
+        request_headers[details.url] = {};
+      }
+      request_headers[details.url][details.requestId] = details.requestHeaders;
     } 
 
     if (previouslySeen) {
@@ -167,8 +170,24 @@ function listener(details) {
       }
     } else {
       if (!ignore_urls.includes(details.url)) {
-        console.log("re-fetching " + details.url);
-        browser.tabs.sendMessage(details.tabId, {'url': details.url, 'type': details.type, 'timeout': 100});
+        console.log("re-fetching " + details.type + " " + details.url);
+
+        var info = {};
+
+        if (details.type == 'xmlhttprequest') {
+          info = {
+            'method': details.method,
+            'headers': request_headers[details.url][details.requestId],
+            'body': details.requestBody
+          }
+        }
+
+        browser.tabs.sendMessage(details.tabId, {
+          'url': details.url,
+          'type': details.type,
+          'info': info, 
+          'timeout': 100
+        });
       }
     }
     filter.disconnect();
@@ -187,8 +206,8 @@ function new_frame(details) {
 
 browser.webRequest.onBeforeRequest.addListener(
   listener,
-  {urls: ["<all_urls>"], types: ["script","stylesheet","media","object","image"]},
-  ['blocking']
+  {urls: ["<all_urls>"], types: ["script","stylesheet","media","object","image", "xmlhttprequest"]},
+  ['blocking', 'requestBody']
 );
 
 browser.webRequest.onBeforeRequest.addListener(
