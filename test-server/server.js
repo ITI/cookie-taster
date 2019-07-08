@@ -15,18 +15,19 @@ app.use(function (req, res, next) {
 
   if (req.path != "/test.json") {
     next();
-  }
+  } else  {
 
-  // check if client sent cookie
-  var cookie = req.cookies.cookieName;
-  if (cookie === undefined) {
-    // no: set a new cookie
-    var randomNumber=Math.random().toString();
-    randomNumber=randomNumber.substring(2,randomNumber.length);
-    res.cookie('cookieName',randomNumber, { maxAge: 900000, httpOnly: true });
-    res.json({'data': 'unauthenticated'});
-  } else {
-    res.json({'data': 'cookie authenticated'}); 
+    // check if client sent cookie
+    var cookie = req.cookies.cookieName;
+    if (cookie === undefined) {
+      // no: set a new cookie
+      var randomNumber=Math.random().toString();
+      randomNumber=randomNumber.substring(2,randomNumber.length);
+      res.cookie('cookieName',randomNumber, { maxAge: 900000, httpOnly: true });
+      res.json({'data': 'unauthenticated'});
+    } else {
+      res.json({'data': 'cookie authenticated'}); 
+    }
   }
 });
 
