@@ -15,6 +15,14 @@ function sanitizeFilename(name) {
     return name.replace(/[^a-z0-9\.]/gi, '_').toLowerCase();
 }
 
+function downloadListener(delta) {
+  if (delta.state && delta.state.current === "complete") {
+    console.log(`Download ${delta.id} ${delta.url} ${delta.filename} has completed.`);
+  }
+}
+
+browser.downloads.onChanged.addListener(downloadListener);
+
 function download(data, fname) {
     var blob = new Blob([data], {type: 'application/javascript'})
     var blob_url = URL.createObjectURL(blob);
@@ -155,6 +163,7 @@ function listener(details) {
       cookieStr2 = resource_urls[details.url][keys[1]]['cookie'] ? 'cookie' : 'no_cookie';
       if (details.type == 'script' || details.type == 'stylesheet') {
         if(data1 != data2) {
+          console.log(`Downloading ${details.url} ${details.type}`);
           download(data1, [main_url, details.url, details.type, cookieStr1].join('.'));
           download(data2, [main_url, details.url, details.type, cookieStr2].join('.'));
         } else {
@@ -162,6 +171,7 @@ function listener(details) {
         }
       } else {
         if (!equal(data1, data2)) {
+          console.log(`Downloading ${details.url} ${details.type}`);
           download(data1, [main_url, details.url, details.type, cookieStr1].join('.'));
           download(data2, [main_url, details.url, details.type, cookieStr2].join('.'));
         } else {
