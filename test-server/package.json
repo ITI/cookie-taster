@@ -1,0 +1,20 @@
+{
+  "name": "test-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "cookie-parser": "^1.4.4",
+    "express": "^4.17.1",
+    "express-winston": "^3.2.1",
+    "morgan": "^1.9.1",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node server.js",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
