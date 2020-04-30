@@ -41,12 +41,9 @@ function injectScript(request, sender, sendResponse) {
       for (var header in headers) {
         req.setRequestHeader(headers[header]['name'], headers[header]['value']);
       }
-      
-      req.onload = function () {
-            alert("again:" + this.responseText);
-      };
       req.send();
     } 
   });
   
 }
+
